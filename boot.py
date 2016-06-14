@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import mraa
 import time
 import subprocess
@@ -7,6 +9,8 @@ import datetime
 import pyupm_i2clcd as lcd
 import pyupm_grove as grove
 import math
+
+time.sleep(30)
 
 def flash():
     buzz_pin_number=6
