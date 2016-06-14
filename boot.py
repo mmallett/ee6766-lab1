@@ -5,6 +5,7 @@ import smtplib
 from email.mime.text import MIMEText
 import datetime
 import pyupm_i2clcd as lcd
+import pyupm_grove as grove
 import math
 
 def flash():
@@ -88,38 +89,44 @@ def mail():
     smtpserver.quit()
 
 def readtemp():
+    # Create the temperature sensor object using AIO pin 0
+    temp = grove.GroveTemp(1)
 
-    tempSensor = mraa.Aio(1)
-    a = tempSensor.read()
+    celsius = temp.value()
+    fahrenheit = celsius * 9.0/5.0 + 32.0;
 
-    b=4275
+    return (celsius, fahrenheit)
 
-    r = 1023.0/a-1.0;
-    r = 100000.0*r;
 
-    return 1.0/(math.log(r/100000.0)/b+1/298.15)-273.15;
+# Initialize Jhd1313m1 at 0x3E (LCD_ADDRESS) and 0x62 (RGB_ADDRESS)
+myLcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
+myLcd.setColor(255, 0, 255)
+
+switch_pin_number=8
+switch = mraa.Gpio(switch_pin_number)
+switch.dir(mraa.DIR_IN)
 
 def screen():
     ips = getip()
 
     temp = readtemp()
 
-    # Initialize Jhd1313m1 at 0x3E (LCD_ADDRESS) and 0x62 (RGB_ADDRESS)
-    myLcd = lcd.Jhd1313m1(0, 0x3E, 0x62)
-
     myLcd.setCursor(0,0)
-
-    # RGB Red
-    myLcd.setColor(255, 255, 0)
 
     myLcd.write(ips[0][1])
     myLcd.setCursor(1,0)
-    myLcd.write(str(temp))
 
-    while(1):
-        pass
+    if(switch.read()):
+        tempstr = '%sC %sF  ' % (temp[0], temp[1])
+        myLcd.write(tempstr)
+    else:
+        myLcd.write('               ')
+
+    time.sleep(.5)
 
 
 flash()
-screen()
-# mail()
+mail()
+
+while(1):
+    screen()
